@@ -150,7 +150,15 @@ func (l *LanguageService) documentationFromAlias(c *checker.Checker, symbol *ast
 
 func (l *LanguageService) getDocumentationFromDeclaration(c *checker.Checker, symbol *ast.Symbol, declaration *ast.Node, location *ast.Node, contentFormat lsproto.MarkupKind, commentOnly bool) string {
 	if declaration == nil {
-		return ""
+		// For mapped type properties, ValueDeclaration is nil but Declarations may be set
+		// to the original property's declarations (when shouldLinkPropDeclarations is true).
+		// Fall back to the first declaration so we can find JSDoc on the original property.
+		if symbol != nil && len(symbol.Declarations) > 0 {
+			declaration = symbol.Declarations[0]
+		}
+		if declaration == nil {
+			return ""
+		}
 	}
 
 	isMarkdown := contentFormat == lsproto.MarkupKindMarkdown
